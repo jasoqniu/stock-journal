@@ -29,10 +29,8 @@ past = current_datetime - time_delta
 current_date = current_datetime.strftime("%Y-%m-%d")
 date = past.strftime("%d-%m-%Y")
 
-#set stocklist from investpy
-#stock_list = investpy.get_stocks_list(country= "Indonesia")
-#stock_list.sort()
 
+#stocklist.xlsx = https://www.idx.co.id/id/data-pasar/data-saham/daftar-saham/
 excel_file = path + 'stocklist.xlsx'
 df = pd.read_excel(excel_file)
 stock_list = df['Kode'].tolist()
