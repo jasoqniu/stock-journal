@@ -12,7 +12,7 @@ from openpyxl.styles import PatternFill
 from openpyxl.styles import numbers
 from openpyxl.styles import Font, Color
 
-# set path
+#path
 path = "C:\\Users\\Jason\\Downloads\\puefolder\\"
 
 #set excel workbook
@@ -33,11 +33,14 @@ date = past.strftime("%d-%m-%Y")
 #stock_list = investpy.get_stocks_list(country= "Indonesia")
 #stock_list.sort()
 
-#STOCKLIST = https://www.idx.co.id/id/data-pasar/data-saham/daftar-saham/
 excel_file = path + 'stocklist.xlsx'
 df = pd.read_excel(excel_file)
 stock_list = df['Kode'].tolist()
 
+
+#input percentage 
+percent_input = int(input("INPUT REQUESTED PERCENTAGE (n% OR 0.0n) : "))
+percent_input = percent_input/100
 
 #looping stock list
 for s in stock_list:
@@ -188,17 +191,17 @@ for s in stock_list:
         cl_value = sheet.cell(row=rowvalue, column=9).value 
         cc_value = sheet.cell(row=rowvalue, column=10).value 
 
-        if ch_value is not None and ch_value >= 0.02:
+        if ch_value is not None and ch_value >= percent_input:
             sheet.cell(row=rowvalue,column=8).fill = PatternFill(start_color="6fe26f",
                                                                  end_color="6fe26f",
                                                                    fill_type="solid")
-        if cl_value is not None and cl_value <= -0.03:
+        if cl_value is not None and cl_value <= -percent_input:
             sheet.cell(row=rowvalue,column=9).fill = PatternFill(start_color="e2746f",
                                                                  end_color="e2746f",
                                                                    fill_type="solid")
             sheet.cell(row=rowvalue, column=9).font = Font(color="FFFFFF", bold=True, italic=False)
             
-        if cc_value is not None and cc_value <= -0.03:
+        if cc_value is not None and cc_value <= -percent_input:
              sheet.cell(row=rowvalue,column=10).fill = PatternFill(start_color="e2746f",
                                                                  end_color="e2746f",
                                                                    fill_type="solid")
@@ -247,7 +250,7 @@ for s in stock_list:
             sheet.cell(row=r,column=14).value = "YES"
             
             #prank
-            if sheet.cell(row=r, column=8).value is not None and sheet.cell(row=r, column=8).value >= 0.02:
+            if sheet.cell(row=r, column=8).value is not None and sheet.cell(row=r, column=8).value >= percent_input:
                 sheet.cell(row=r,column=15).value = "PRANK"
                 prank_true += 1
                 #print("PRANK = TRUE")
@@ -278,7 +281,7 @@ for s in stock_list:
         
         if open_today == low_today and r != 2:
             jjsoplo_count +=1
-            if ch_tomorrow is not None and ch_tomorrow >= 0.02:
+            if ch_tomorrow is not None and ch_tomorrow >= percent_input:
                 sheet.cell(row=r,column=16).value = "WIN"
                 jjsoplo_wins += 1
             else:
