@@ -126,7 +126,6 @@ for s in stock_list:
         volume_position = sheet.cell(row=rowvalue, column=6)
         '''
         sheet.cell(row=rowvalue, column=1).value = tanggal_value
-        #sheet.cell(row=rowvalue, column=1).number_format = numbers.FORMAT_DATE_XLSX14
         sheet.cell(row=rowvalue, column=2).value = open_value
         sheet.cell(row=rowvalue, column=3).value = high_value
         sheet.cell(row=rowvalue, column=4).value = low_value
@@ -409,6 +408,60 @@ for kode, wr in arr_filter_wroplo9:
     new_sheet.cell(row=rowvalue, column=2).number_format = numbers.FORMAT_PERCENTAGE_00
     rowvalue+= 1
 #-----------------------------#
+
+#--------------MARUBOZU---------------#
+new_sheet = wb_results.create_sheet("MRBZ FULL BULLISH")
+new_sheet.cell(row=1,column=1).value = "Kode"
+def fullbullish(wb,output_sheet):
+    for sheetname in wb.sheetnames:
+        sheet = wb[sheetname]
+        
+        val_arr = []
+        for r in range(2,102):
+            close = sheet.cell(row=r,column=5).value
+            vol = sheet.cell(row=r,column=6).value
+            if vol is not None and close is not None:
+                val = vol + close
+                val_arr.append(val)
+        avg_val = sum(val_arr) / len(val_arr)
+        
+        open = sheet.cell(row=2,column=2).value
+        high = sheet.cell(row=2,column=3).value
+        low = sheet.cell(row=2,column=4).value
+        close = sheet.cell(row=2,column=5).value
+        
+        if open == low and close == high and avg_val > 10000000:
+            output_sheet.append([sheetname])
+
+fullbullish(wb_AL,new_sheet)
+fullbullish(wb_MZ,new_sheet)
+
+new_sheet = wb_results.create_sheet("MRBZ CLOSE BULLISH")
+new_sheet.cell(row=1,column=1).value = "Kode"
+def closebullish(wb,output_sheet):
+    for sheetname in wb.sheetnames:
+        sheet = wb[sheetname]
+        
+        val_arr = []
+        for r in range(2,102):
+            close = sheet.cell(row=r,column=5).value
+            vol = sheet.cell(row=r,column=6).value
+            if vol is not None and close is not None:
+                val = vol + close
+                val_arr.append(val)
+        avg_val = sum(val_arr) / len(val_arr)
+        
+        open = sheet.cell(row=2,column=2).value
+        high = sheet.cell(row=2,column=3).value
+        close = sheet.cell(row=2,column=5).value
+        
+        if close == high and open < close and avg_val > 1000000000:
+            output_sheet.append([sheetname])
+            
+closebullish(wb_AL,new_sheet)
+closebullish(wb_MZ,new_sheet)
+
+#-------------------------------------#
 
 #------------BOW--------------#
 def bow(wb):
