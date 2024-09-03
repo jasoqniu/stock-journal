@@ -449,7 +449,7 @@ for i, row in enumerate(bow_data,2):
 #-----------------------------#
 
 #-------------POLA----------------#
-def pola(wb, arr1,arr2):
+def pola(wb, arr1):
     for sheet_name in wb.sheetnames:
         sheet = wb[sheet_name]
         pola1 = 0
@@ -478,33 +478,33 @@ def pola(wb, arr1,arr2):
                                     if sheet.cell(row=r + 6, column=8).value is not None and sheet.cell(row=r + 6, column=8).value >= percent_input:  # Hijau putih5 hijau
                                         pola5 += 1
 
-        arr1.append((sheet_name,pola1,pola2,pola3,pola4,pola5))
         if pola4 > 2 or pola5 > 0:
-            arr2.append((sheet_name,"---"))
+            pola_type = "---"
         elif pola1 > 2*pola2:
-            arr2.append((sheet_name,"POLA 1"))
+            pola_type = "Pola 1"
         elif pola2 > 2*pola3:
-            arr2.append((sheet_name,"POLA 2"))
+            pola_type = "Pola 2"
         elif pola3 > 2*pola4:
-            arr2.append((sheet_name,"POLA 3"))
-
+            pola_type = "Pola 3"
+        arr1.append((sheet_name,pola_type,pola1,pola2,pola3,pola4,pola5))
         
-arr_pola_count = [] 
 arr_pola = []
-pola(wb_AL,arr_pola_count,arr_pola)
-pola(wb_MZ,arr_pola_count,arr_pola)
-new_sheet = wb_results.create_sheet("POLA(count)")
-new_sheet.append(["Kode", "Pola1","Pola2","Pola3","Pola4","Pola5"])
+pola(wb_AL,arr_pola)
+pola(wb_MZ,arr_pola)
+new_sheet = wb_results.create_sheet("POLA")
+new_sheet.append(["Kode","Pola","Pola1","Pola2","Pola3","Pola4","Pola5"])
 rowvalue = 2
-for kode, p1,p2,p3,p4,p5 in arr_pola_count:
-    new_sheet.append([kode, p1,p2,p3,p4,p5])
+for kode,p, p1,p2,p3,p4,p5 in arr_pola:
+    new_sheet.append([kode,p,p1,p2,p3,p4,p5])
     rowvalue+= 1
 
+'''
 new_sheet = wb_results.create_sheet("POLA")
 new_sheet.append(["Kode","Pola"])
 rowvalue = 2
 for kode, p in arr_pola:
     new_sheet.append([kode, p])
     rowvalue+= 1
+'''
 #---------------------------------#
 wb_results.save(path + "RESULTS_" + str(percent_input) + ".xlsx")
