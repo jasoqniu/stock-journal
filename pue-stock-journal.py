@@ -540,9 +540,8 @@ def pola(wb, arr1):
                 arr_hijau.append(streakhijau)
                 streakhijau = 0
             elif r == 101:
-                streakhijau +=1
-                arr_hijau.append(streakhijau)
-                streakhijau = 0
+                if streakhijau != 0:
+                    arr_hijau.append(streakhijau)
         print(sheet, arr_hijau)
         sumhijau = sum(arr_hijau)
         lenhijau = len(arr_hijau)
@@ -558,21 +557,23 @@ def pola(wb, arr1):
         else:
             pola_type = "---"
         arr1.append((sheet_name,pola_type,paradehijau,pola1,pola2,pola3,pola4,pola5))
-        
+  
 arr_pola = []
 pola(wb_AL,arr_pola)
 pola(wb_MZ,arr_pola)
 
 urut_pola = {"Pola 1": 1, "Pola 2": 2, "Pola 3": 3, "---": 4}
-arr_pola.sort(key=lambda x: urut_pola[x[1]])
+arr_pola.sort(key=lambda x: (urut_pola[x[1]], -x[2]))
 
 
 new_sheet = wb_results.create_sheet("POLA")
 new_sheet.append(["Kode","Tipe Pola","Parade Hijau", "Pola1","Pola2","Pola3","Pola4","Pola5"])
 rowvalue = 2
+
 for kode,p,ph,p1,p2,p3,p4,p5 in arr_pola:
     new_sheet.append([kode,p,ph,p1,p2,p3,p4,p5])
     new_sheet.cell(row=rowvalue, column=3).number_format = '0.00'
     rowvalue+= 1
 #---------------------------------#
+
 wb_results.save(path + "RESULTS_" + str(percent_input) + ".xlsx")
