@@ -37,8 +37,9 @@ stock_list = df['Kode'].tolist()
 
 
 #input percentage 
-percent_input = int(input("INPUT REQUESTED PERCENTAGE (n% OR 0.0n) : "))
+percent_input = int(input("INPUT REQUESTED PERCENTAGE : "))
 percent_input = percent_input/100
+print(percent_input)
 
 #looping stock list
 for s in stock_list:
@@ -304,7 +305,7 @@ for s in stock_list:
         
         if open_value == low_value:
             oplo9_count +=1
-            if (high_value / open_value) > 1.03:
+            if (high_value / open_value) >= 1 + (percent_input):
                 sheet.cell(row=r,column=19).value = "WIN"
                 oplo9_win +=1
             else:
@@ -321,12 +322,17 @@ for s in stock_list:
     sheet.cell(row=2,column=20).number_format = numbers.FORMAT_PERCENTAGE_00
     
 #save to A-L & M-Z workbook
-wb_AL.save(path + "new_AL.xlsx")
-wb_MZ.save(path + "new_MZ.xlsx")
-    
+wb_AL.save(path + "new_AL_" + str(percent_input) + ".xlsx")
+wb_MZ.save(path + "new_MZ_" + str(percent_input) + ".xlsx")
+
+
+
+wb_results = openpyxl.Workbook()
+wb_results.remove(wb_results["Sheet"]) 
+
+
     
 #----------FILTERING----------#
-
 #///FILTER JJSOL///
 def filter_wrjjsol(wb, arr):
     for sheet_name in wb.sheetnames:
@@ -344,7 +350,7 @@ def filter_wrjjsol(wb, arr):
         wrjjsol = sheet.cell(row=2, column=17).value
 
         if wrjjsol > 0.6:
-            arr.append((sheet_name, wrjjsol,))
+            arr.append((sheet_name, wrjjsol))
 # arr for filtered stocks
 arr_filter_wrrjjsol = []
 # call function
@@ -354,11 +360,9 @@ filter_wrjjsol(wb_MZ, arr_filter_wrrjjsol)
 # sort stock
 arr_filter_wrrjjsol.sort(key=lambda x: x[1], reverse=True)
 
-# create new wb
-wb_tugas = Workbook()
-wb_tugas.remove(wb_tugas["Sheet"])
-new_sheet = wb_tugas.active
-new_sheet = wb_tugas.create_sheet("WRJJSOL")
+
+#save into results workbook
+new_sheet = wb_results.create_sheet("WRJJSOL")
 new_sheet.append(["Kode", "WR% JJSOL"])
 
 rowvalue = 2
@@ -366,8 +370,7 @@ for kode, wr in arr_filter_wrrjjsol:
     new_sheet.append([kode, wr])
     new_sheet.cell(row=rowvalue, column=2).number_format = numbers.FORMAT_PERCENTAGE_00
     rowvalue+= 1
-# save 
-#wb_tugas.save(path + "filtered_stocks_combined.xlsx")
+
 
 
 #///FILTER OPLO9///#
@@ -386,7 +389,7 @@ def fiter_wroplo9(wb, arr):
         
         wroplo9 = sheet.cell(row=2, column=20).value
         if wroplo9 > 0.6:
-            arr.append((sheet_name, wroplo9,))
+            arr.append((sheet_name, wroplo9))
 # arr for filtered stocks
 arr_filter_wroplo9 = []
 # call function
@@ -396,17 +399,112 @@ fiter_wroplo9(wb_MZ, arr_filter_wroplo9)
 # sort stock
 arr_filter_wroplo9.sort(key=lambda x: x[1], reverse=True)
 
-# create new wb
-new_sheet = wb_tugas.create_sheet("WROPLO9")
+new_sheet = wb_results.create_sheet("WROPLO9")
 new_sheet.append(["Kode", "WR% OpLo9"])
+
 
 rowvalue = 2
 for kode, wr in arr_filter_wroplo9:
     new_sheet.append([kode, wr])
     new_sheet.cell(row=rowvalue, column=2).number_format = numbers.FORMAT_PERCENTAGE_00
     rowvalue+= 1
-# save 
-wb_tugas.save(path + "filtered_stocks_combined.xlsx")
+#-----------------------------#
 
+#------------BOW--------------#
+def bow(wb):
+    bow_data = []
+    for sheet_name in wb.sheetnames:
+        sheet = wb[sheet_name]
+        total_red = 0
+        bow_count = 0
+        
+        for r in range(2, 102):
+            cl_value = sheet.cell(row=r, column=9).value
+            cc_value = sheet.cell(row=r, column=10).value
+            if cl_value is not None and cc_value is not None:
+                if cl_value < -percent_input:  
+                    total_red += 1
+                    if cl_value < cc_value: 
+                        bow_count += 1
+        
+        if total_red > 0:
+            bow_rate = bow_count / total_red
+            bow_data.append([sheet_name, bow_count, bow_rate])
+            
+    return bow_data
+
+new_sheet = wb_results.create_sheet("BOW")
+new_sheet.append(["Kode", "BOWs", "BOW%"])
+
+bow_data_al = bow(wb_AL)
+bow_data_mz= bow(wb_MZ)
+
+bow_data = bow_data_al + bow_data_mz
+bow_data.sort(key=lambda x: x[2], reverse=True)
+
+for i, row in enumerate(bow_data,2):
+    new_sheet.append(row)
+    new_sheet.cell(row=i, column=3).number_format = numbers.FORMAT_PERCENTAGE_00
 
 #-----------------------------#
+
+#-------------POLA----------------#
+def pola(wb, arr1,arr2):
+    for sheet_name in wb.sheetnames:
+        sheet = wb[sheet_name]
+        pola1 = 0
+        pola2 = 0
+        pola3 = 0
+        pola4 = 0
+        pola5 = 0
+        for r in range(2, 102):
+            ch_today = sheet.cell(row=r, column=8).value 
+            ch_yesterday = sheet.cell(row=r + 1, column=8).value 
+
+            if ch_today is not None and ch_yesterday is not None:
+                if ch_today >= percent_input and ch_yesterday < percent_input:  # Hijau putih
+                    if sheet.cell(row=r + 2, column=8).value is not None and sheet.cell(row=r + 2, column=8).value >= percent_input:  # Hijau putih hijau
+                        pola1 += 1
+                    elif sheet.cell(row=r + 2, column=8).value is not None and sheet.cell(row=r + 2, column=8).value < percent_input:  # Hijau putih2
+                        if sheet.cell(row=r + 3, column=8).value is not None and sheet.cell(row=r + 3, column=8).value >= percent_input:  # Hijau putih2 hijau
+                            pola2 += 1
+                        elif sheet.cell(row=r + 3, column=8).value is not None and sheet.cell(row=r + 3, column=8).value < percent_input:  # Hijau putih3
+                            if sheet.cell(row=r + 4, column=8).value is not None and sheet.cell(row=r + 4, column=8).value >= percent_input:  # Hijau putih3 hijau
+                                pola3 += 1
+                            elif sheet.cell(row=r + 4, column=8).value is not None and sheet.cell(row=r + 4, column=8).value < percent_input:  # Hijau putih4 
+                                if sheet.cell(row=r + 5, column=8).value is not None and sheet.cell(row=r + 5, column=8).value >= percent_input:  # Hijau putih4 hijau
+                                    pola4 += 1
+                                elif sheet.cell(row=r + 5, column=8).value is not None and sheet.cell(row=r + 5, column=8).value < percent_input:  # Hijau putih5
+                                    if sheet.cell(row=r + 6, column=8).value is not None and sheet.cell(row=r + 6, column=8).value >= percent_input:  # Hijau putih5 hijau
+                                        pola5 += 1
+
+        arr1.append((sheet_name,pola1,pola2,pola3,pola4,pola5))
+        if pola4 > 2 or pola5 > 0:
+            arr2.append((sheet_name,"---"))
+        elif pola1 > 2*pola2:
+            arr2.append((sheet_name,"POLA 1"))
+        elif pola2 > 2*pola3:
+            arr2.append((sheet_name,"POLA 2"))
+        elif pola3 > 2*pola4:
+            arr2.append((sheet_name,"POLA 3"))
+
+        
+arr_pola_count = [] 
+arr_pola = []
+pola(wb_AL,arr_pola_count,arr_pola)
+pola(wb_MZ,arr_pola_count,arr_pola)
+new_sheet = wb_results.create_sheet("POLA(count)")
+new_sheet.append(["Kode", "Pola1","Pola2","Pola3","Pola4","Pola5"])
+rowvalue = 2
+for kode, p1,p2,p3,p4,p5 in arr_pola_count:
+    new_sheet.append([kode, p1,p2,p3,p4,p5])
+    rowvalue+= 1
+
+new_sheet = wb_results.create_sheet("POLA")
+new_sheet.append(["Kode","Pola"])
+rowvalue = 2
+for kode, p in arr_pola:
+    new_sheet.append([kode, p])
+    rowvalue+= 1
+#---------------------------------#
+wb_results.save(path + "RESULTS_" + str(percent_input) + ".xlsx")
