@@ -502,20 +502,22 @@ for i, row in enumerate(bow_data,2):
 #-----------------------------#
 
 #-------------POLA----------------#
+arr_rekomend = []
+
 def pola(wb, arr1):
     for sheet_name in wb.sheetnames:
         sheet = wb[sheet_name]
-        pola1 = 0
-        pola2 = 0
-        pola3 = 0
-        pola4 = 0
-        pola5 = 0
+        pola1 = pola2 = pola3 = pola4 = pola5 = 0
+        putih = hijau = 0
         streakhijau = 0
         arr_hijau = []
+
+        dump = False
         for r in range(2, 102):
-            ch_today = sheet.cell(row=r, column=8).value 
-            ch_yesterday = sheet.cell(row=r + 1, column=8).value 
-            #CARI POLA
+            ch_today = sheet.cell(row=r, column=8).value
+            ch_yesterday = sheet.cell(row=r + 1, column=8).value
+            
+            # CARI POLA 
             if ch_today is not None and ch_yesterday is not None:
                 if ch_today >= percent_input and ch_yesterday < percent_input:  # Hijau putih
                     if sheet.cell(row=r + 2, column=8).value is not None and sheet.cell(row=r + 2, column=8).value >= percent_input:  # Hijau putih hijau
@@ -532,48 +534,91 @@ def pola(wb, arr1):
                                 elif sheet.cell(row=r + 5, column=8).value is not None and sheet.cell(row=r + 5, column=8).value < percent_input:  # Hijau putih5
                                     if sheet.cell(row=r + 6, column=8).value is not None and sheet.cell(row=r + 6, column=8).value >= percent_input:  # Hijau putih5 hijau
                                         pola5 += 1
-            #PARADE HIJAU
-            if ch_today is not None and ch_yesterday is not None and ch_today >= percent_input and ch_yesterday >= percent_input:
+                                    else:
+                                        dump = True
+
+            # PARADE HIJAU 
+            if ch_today is not None and ch_today >= percent_input:
                 streakhijau += 1
-            elif ch_today is not None and ch_yesterday is not None and ch_today >= percent_input and ch_yesterday < percent_input:
-                streakhijau +=1
-                arr_hijau.append(streakhijau)
-                streakhijau = 0
-            elif r == 101:
-                if streakhijau != 0:
+            else:
+                if streakhijau > 0:
                     arr_hijau.append(streakhijau)
+                    streakhijau = 0
+            
+            if r == 101 and streakhijau > 0:
+                arr_hijau.append(streakhijau)
         print(sheet, arr_hijau)
         sumhijau = sum(arr_hijau)
         lenhijau = len(arr_hijau)
-        paradehijau = sumhijau/lenhijau
-        if pola4 > 2 or pola5 > 0:
+        paradehijau = sumhijau / lenhijau if lenhijau > 0 else 0
+
+        if pola4 > 2 or pola5 > 0 or dump == True:
             pola_type = "---"
-        elif pola1 > 2*pola2:
+        elif pola1 > 2 * pola2:
             pola_type = "Pola 1"
-        elif pola2 > 2*pola3:
+        elif pola2 > 2 * pola3:
             pola_type = "Pola 2"
-        elif pola3 > 2*pola4:
+        elif pola3 > 2 * pola4:
             pola_type = "Pola 3"
         else:
             pola_type = "---"
-        arr1.append((sheet_name,pola_type,paradehijau,pola1,pola2,pola3,pola4,pola5))
-  
+        if pola_type != "---":
+            arr1.append((sheet_name, pola_type, paradehijau, pola1, pola2, pola3, pola4, pola5))
+
+        # REKOMENDASI
+        hijau = putih = 0
+        for r in range(2, 102):
+            ch_today_only = sheet.cell(row=r, column=8).value
+            if ch_today_only is not None:
+                if ch_today_only >= percent_input:
+                    hijau += 1
+                    putih = 0
+                elif ch_today_only < percent_input:
+                    putih += 1
+                    hijau = 0
+        
+        arr_rekomend.append((sheet_name, pola_type, paradehijau, hijau, putih))
+        
 arr_pola = []
-pola(wb_AL,arr_pola)
-pola(wb_MZ,arr_pola)
+pola(wb_AL, arr_pola)
+pola(wb_MZ, arr_pola)
 
 urut_pola = {"Pola 1": 1, "Pola 2": 2, "Pola 3": 3, "---": 4}
 arr_pola.sort(key=lambda x: (urut_pola[x[1]], -x[2]))
 
-
 new_sheet = wb_results.create_sheet("POLA")
-new_sheet.append(["Kode","Tipe Pola","Parade Hijau", "Pola1","Pola2","Pola3","Pola4","Pola5"])
-rowvalue = 2
+new_sheet.append(["Kode", "Tipe Pola", "Parade Hijau", "Pola1", "Pola2", "Pola3", "Pola4", "Pola5"])
 
-for kode,p,ph,p1,p2,p3,p4,p5 in arr_pola:
-    new_sheet.append([kode,p,ph,p1,p2,p3,p4,p5])
+rowvalue = 2
+for kode, p, ph, p1, p2, p3, p4, p5 in arr_pola:
+    new_sheet.append([kode, p, ph, p1, p2, p3, p4, p5])
     new_sheet.cell(row=rowvalue, column=3).number_format = '0.00'
-    rowvalue+= 1
-#---------------------------------#
+    rowvalue += 1
+
+filtered_rekomend = []
+for i in range(len(arr_rekomend)):
+    sheet_name, pola_type, paradehijau, hijau, putih = arr_rekomend[i]
+    if pola_type == "Pola 1" and 1 <= putih <= 3:
+        rekomendasi = "YES"
+    else:
+        rekomendasi = "NO"
+    
+    if pola_type != "---" and rekomendasi == "YES":
+        filtered_rekomend.append((sheet_name, pola_type, paradehijau, hijau, putih, rekomendasi))
+
+filtered_rekomend.sort(key=lambda x: (urut_pola[x[1]], -x[2], x[5] == "NO"))
+
+rekomendasi_sheet = wb_results.create_sheet("REKOMENDASI")
+rekomendasi_sheet.append(["Kode", "Tipe Pola", "Parade Hijau", "Hijau", "Putih", "Rekomendasi"])
+
+
+rowvalue = 2
+for sheet_name, pola_type, paradehijau, hijau, putih, rekomendasi in filtered_rekomend:
+    rekomendasi_sheet.append([sheet_name, pola_type, round(paradehijau, 2), hijau, putih, rekomendasi])
+    rekomendasi_sheet.cell(row=rowvalue, column=3).number_format = '0.00'
+    rowvalue += 1
+
+print(arr_rekomend)
+
 
 wb_results.save(path + "RESULTS_" + str(percent_input) + ".xlsx")
